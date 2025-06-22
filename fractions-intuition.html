@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fraction Intuition</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background: #fefefe;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  img.logo {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+  }
+
+  h1 {
+    font-weight: 700;
+    font-size: 1.8rem;
+    margin: 0;
+    color: #333;
+  }
+
+  #scoreboard {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    max-width: 600px;
+    color: #1e90ff;
+  }
+
+  #lineContainer {
+    position: relative;
+    height: 60px; /* room for labels */
+    margin: 40px 0;
+    user-select: none;
+    max-width: 600px;
+  }
+
+  #line {
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: #888;
+    border-radius: 2px;
+  }
+
+  #segments {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    right: 0;
+    height: 20px;
+    pointer-events: none;
+  }
+
+  .segmentMark {
+    position: absolute;
+    width: 2px;
+    height: 20px;
+    background: #333;
+    top: 0;
+  }
+
+  #labels {
+    position: absolute;
+    top: 42px;
+    left: 0;
+    right: 0;
+    height: 18px;
+    pointer-events: none;
+    font-size: 14px;
+    color: #333;
+    user-select: none;
+  }
+
+  .label {
+    position: absolute;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  #nodeWrapper {
+    position: absolute;
+    top: 4px;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    touch-action: none;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #node {
+    width: 16px;
+    height: 16px;
+    background: #1e90ff;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  button {
+    margin: 10px 8px 10px 0;
+    font-size: 1rem;
+    padding: 8px 20px;
+    background: #1e90ff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+
+  button:hover:not(:disabled) {
+    background-color: #187bcd;
+  }
+
+  button:disabled {
+    background-color: #a0cfff;
+    cursor: default;
+  }
+
+  #message {
+    margin: 12px 0 0 0;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #333;
+    min-height: 36px;
+  }
+
+  #prompt {
+    font-size: 1.3rem;
+    font-weight: 600;
+    max-width: 600px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img class="logo" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIyOCIgc3Ryb2tlPSIjMTU4OThGIiBzdHJva2Utd2lkdGg9IjQiIGZpbGw9IiM0RThBRTQiLz4KPHBhdGggZD0iTTMyIDM0IGEgMTggMTggMCAwIDAgMTggMCAxOCAxOCAwIDAgMCAtMTggMCIgZmlsbD0iIzE1ODk4RiIvPgo8L3N2Zz4=" alt="Fraction Logo" />
+  <h1>Fraction Intuition</h1>
+</header>
+
+<div id="scoreboard"></div>
+<div id="prompt"></div>
+
+<div id="lineContainer" style="max-width:600px;">
+  <div id="line"></div>
+  <div id="segments"></div>
+  <div id="labels"></div>
+  <div id="nodeWrapper">
+    <div id="node"></div>
+  </div>
+</div>
+
+<button id="checkBtn">Check my guess</button>
+<button id="nextBtn" style="display:none;">Next Fraction</button>
+
+<div id="message"></div>
+
+<script>
+  const levels = [
+    [
+      [1, 2],
+      [1, 3],
+      [2, 3],
+      [1, 4],
+      [3, 4],
+      [1, 5],
+      [2, 5],
+      [3, 5],
+      [4, 5]
+    ],
+    [
+      [1, 6],
+      [5, 6],
+      [1, 8],
+      [3, 8],
+      [5, 8],
+      [7, 8],
+      [1, 10],
+      [3, 10],
+      [7, 10],
+      [9, 10]
+    ],
+    [
+      [1, 7],
+      [2, 7],
+      [3, 7],
+      [4, 7],
+      [5, 7],
+      [6, 7],
+      [1, 9],
+      [2, 9],
+      [4, 9],
+      [5, 9],
+      [7, 9],
+      [8, 9],
+      [1, 12],
+      [5, 12],
+      [7, 12],
+      [11, 12]
+    ]
+  ];
+
+  let currentLevel = 0;
+  let correctCountInLevel = 0;
+  let totalCorrect = 0;
+  let totalGuesses = 0;
+
+  let currentFractionIndex = 0;
+  let currentFractionSet = levels[currentLevel];
+
+  const lineContainer = document.getElementById('lineContainer');
+  const nodeWrapper = document.getElementById('nodeWrapper');
+  const promptDiv = document.getElementById('prompt');
+  const checkBtn = document.getElementById('checkBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const messageDiv = document.getElementById('message');
+  const segmentsDiv = document.getElementById('segments');
+  const labelsDiv = document.getElementById('labels');
+  const scoreboard = document.getElementById('scoreboard');
+
+  let dragging = false;
+  let containerRect;
+
+  function updateScoreboard() {
+    scoreboard.textContent = `Level: ${currentLevel + 1} | Correct: ${correctCountInLevel} / 3 | Total Score: ${totalCorrect} / ${totalGuesses}`;
+  }
+
+  function setNodePosition(percent) {
+    percent = Math.min(Math.max(percent, 0), 1);
+    nodeWrapper.style.left = `calc(${percent * 100}% - 20px)`;
+  }
+
+  function getNodePositionPercent() {
+    containerRect = lineContainer.getBoundingClientRect();
+    let wrapperRect = nodeWrapper.getBoundingClientRect();
+    let pos = (wrapperRect.left + wrapperRect.width / 2 - containerRect.left) / containerRect.width;
+    return Math.min(Math.max(pos, 0), 1);
+  }
+
+  function pickRandomFractionIndex() {
+    return Math.floor(Math.random() * currentFractionSet.length);
+  }
+
+  function setNewFraction() {
+    currentFractionIndex = pickRandomFractionIndex();
+    const [num, denom] = currentFractionSet[currentFractionIndex];
+    promptDiv.textContent = `Level ${currentLevel + 1} — Where is ${num}/${denom}?`;
+    clearSegments();
+    clearLabels();
+    setNodePosition(0);
+    messageDiv.textContent = '';
+    checkBtn.style.display = 'inline-block';
+    nextBtn.style.display = 'none';
+    checkBtn.disabled = false;
+    updateScoreboard();
+  }
+
+  function drawSegments(denom) {
+    segmentsDiv.innerHTML = '';
+    for (let i = 1; i < denom; i++) {
+      let mark = document.createElement('div');
+      mark.classList.add('segmentMark');
+      let leftPercent = (i / denom) * 100;
+      mark.style.left = `calc(${leftPercent}% - 1px)`;
+      segmentsDiv.appendChild(mark);
+    }
+  }
+
+  function drawLabels(denom) {
+    labelsDiv.innerHTML = '';
+    for (let i = 1; i < denom; i++) {
+      let label = document.createElement('div');
+      label.classList.add('label');
+      label.style.left = `${(i / denom) * 100}%`;
+      label.textContent = `${i}/${denom}`;
+      labelsDiv.appendChild(label);
+    }
+  }
+
+  function clearSegments() {
+    segmentsDiv.innerHTML = '';
+  }
+
+  function clearLabels() {
+    labelsDiv.innerHTML = '';
+  }
+
+  function checkGuess() {
+    totalGuesses++;
+    const [num, denom] = currentFractionSet[currentFractionIndex];
+    const correctPos = num / denom;
+    const guessPos = getNodePositionPercent();
+    const tolerance = 0.05;
+
+    drawSegments(denom);
+    drawLabels(denom);
+
+    if (Math.abs(guessPos - correctPos) < tolerance) {
+      correctCountInLevel++;
+      totalCorrect++;
+      messageDiv.textContent = `🎉 Great job! You got it right! (Level ${currentLevel + 1}, Correct ${correctCountInLevel} / 3)`;
+      checkBtn.disabled = true;
+    } else {
+      messageDiv.textContent = `❌ Try again! The correct position is at ${num}/${denom}. (Level ${currentLevel + 1})`;
+    }
+
+    checkBtn.style.display = 'none';
+    nextBtn.style.display = 'inline-block';
+    updateScoreboard();
+  }
+
+  function nextFraction() {
+    if (correctCountInLevel >= 3) {
+      currentLevel++;
+      if (currentLevel >= levels.length) {
+        currentLevel = 0;
+      }
+      currentFractionSet = levels[currentLevel];
+      correctCountInLevel = 0;
+      messageDiv.textContent = `➡️ Advancing to level ${currentLevel + 1}!`;
+      updateScoreboard();
+      setTimeout(setNewFraction, 1500);
+    } else {
+      setNewFraction();
+    }
+  }
+
+  function onPointerDown(e) {
+    e.preventDefault();
+    dragging = true;
+    containerRect = lineContainer.getBoundingClientRect();
+  }
+
+  function onPointerMove(e) {
+    if (!dragging) return;
+    let x = e.clientX || (e.touches && e.touches[0].clientX);
+    let pos = (x - containerRect.left) / containerRect.width;
+    pos = Math.min(Math.max(pos, 0), 1);
+    setNodePosition(pos);
+  }
+
+  function onPointerUp(e) {
+    dragging = false;
+  }
+
+  nodeWrapper.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', onPointerUp);
+
+  nodeWrapper.addEventListener('touchstart', onPointerDown);
+  window.addEventListener('touchmove', onPointerMove);
+  window.addEventListener('touchend', onPointerUp);
+
+  checkBtn.addEventListener('click', checkGuess);
+  nextBtn.addEventListener('click', nextFraction);
+
+  setNewFraction();
+</script>
+
+</body>
+</html>
